@@ -108,23 +108,17 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-/** Rasterise the live SVG preview into a PNG reference render (per frame/size family). */
-export async function svgToPng(svgMarkup: string, w = 1536, h = 1024): Promise<Blob> {
-  const url = URL.createObjectURL(new Blob([svgMarkup], { type: "image/svg+xml" }));
-  try {
-    const img = await loadImage(url);
-    const cv = document.createElement("canvas");
-    cv.width = w;
-    cv.height = h;
-    const ctx = cv.getContext("2d")!;
-    ctx.fillStyle = "#0E1117";
-    ctx.fillRect(0, 0, w, h);
-    const s = Math.min(w / 400, h / 240) * 0.9;
-    ctx.drawImage(img, (w - 400 * s) / 2, (h - 240 * s) / 2, 400 * s, 240 * s);
-    return await new Promise((ok) => cv.toBlob((b) => ok(b!), "image/png"));
-  } finally {
-    URL.revokeObjectURL(url);
-  }
+/** Draw a catalogue photo (cover-fit) onto a PNG canvas to use as the AI reference image. */
+export async function imageToPng(src: string, w = 1536, h = 1024): Promise<Blob> {
+  const img = await loadImage(src);
+  const cv = document.createElement("canvas");
+  cv.width = w;
+  cv.height = h;
+  const ctx = cv.getContext("2d")!;
+  const s = Math.max(w / img.naturalWidth, h / img.naturalHeight);
+  const dw = img.naturalWidth * s, dh = img.naturalHeight * s;
+  ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
+  return await new Promise((ok, fail) => cv.toBlob((b) => (b ? ok(b) : fail(new Error("toBlob failed"))), "image/png"));
 }
 
 export function hexToRgb(hex: string): [number, number, number] {

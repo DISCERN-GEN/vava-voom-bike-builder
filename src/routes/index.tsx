@@ -1,9 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Wrench, Palette, Users } from "lucide-react";
 import hero from "@/assets/hero.jpg.asset.json";
-import { COLLECTION } from "@/lib/collection";
-import { BikeSvg } from "@/components/vv/BikeSvg";
-import { encodeConfig, formatZAR, totalCents } from "@/lib/catalog";
 import { seo } from "@/lib/seo";
 
 export const Route = createFileRoute("/")({
@@ -44,23 +41,6 @@ function Home() {
         ))}
       </section>
 
-      <section className="mx-auto max-w-6xl px-4">
-        <div className="flex items-end justify-between">
-          <h2 className="font-display-slant text-3xl md:text-4xl">Featured builds</h2>
-          <Link to="/collection" className="text-primary">See all →</Link>
-        </div>
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
-          {COLLECTION.map((b) => (
-            <Link key={b.slug} to="/build" search={{ step: "summary", config: encodeConfig(b.config) }} className="group rounded-lg border border-border bg-card p-4 transition hover:border-primary">
-              <BikeSvg config={b.config} className="w-full" title={b.name} />
-              <div className="mt-3 flex items-baseline justify-between">
-                <h3 className="font-display-slant text-xl">{b.name}</h3>
-                <span className="num font-bold text-primary">{formatZAR(totalCents(b.config))}</span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
     </>
   );
 }

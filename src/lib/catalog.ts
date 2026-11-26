@@ -273,7 +273,7 @@ export function buildAiPrompt(c0: BikeConfig): string {
     `${c.tyres ? "Chunky upgraded off-road tyres" : "Medium-fat tyres"}, ${c.discs ? "disc brakes" : "rim brakes"}.`,
     `Frame paint: ${c.base === "black" ? "gloss deep black (#0A0A0A)" : "arctic white (#F4F6F8)"} base with accent colour exactly ${c.accent} on the fork, rims and frame stripes.`,
     c.training ? "Fitted with training wheels." : "",
-    "Do NOT draw any text, letters, logos or numbers anywhere in the image. Keep the composition matching the reference image.",
+    "The reference is a VaVa Voom catalogue photo: match its real-bike style and proportions, but show ONE bike only, centred, with your specified frame, fork, bars and paint. Do NOT draw any text, letters, logos, price tags, badges or banners anywhere in the image.",
   ]
     .filter(Boolean)
     .join(" ");

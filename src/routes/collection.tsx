@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { COLLECTION } from "@/lib/collection";
-import { BikeSvg } from "@/components/vv/BikeSvg";
+import { BikePhoto } from "@/components/vv/BikePhoto";
 import { encodeConfig, formatZAR, specLines, totalCents } from "@/lib/catalog";
 import { cart } from "@/lib/cart";
 import { seo } from "@/lib/seo";
@@ -35,7 +35,7 @@ function Collection() {
       <div className="mt-6 grid gap-5 md:grid-cols-3">
         {list.map((b) => (
           <article key={b.slug} className="flex flex-col rounded-lg border border-border bg-card p-4" data-testid="product-card">
-            <BikeSvg config={b.config} className="w-full" title={b.name} />
+            <BikePhoto config={b.config} className="w-full" title={b.name} />
             <h2 className="font-display-slant mt-3 text-2xl">{b.name}</h2>
             <p className="text-sm text-muted-foreground">{b.tagline}</p>
             <ul className="mt-3 space-y-0.5 text-xs text-muted-foreground">

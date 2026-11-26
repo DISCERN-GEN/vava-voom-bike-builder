@@ -35,3 +35,5 @@ use the editor.
 - Cart is device-only localStorage (`src/lib/cart.ts`) — no backend yet; orders go out via WhatsApp/email.
 - AI mockups call OpenAI/Gemini from the browser with the shopper's own key in sessionStorage only — keys must never hit URLs, our server, or logs.
 - Unit tests in `src/test`, mobile Playwright E2E in `e2e/` (`bun run test:e2e`).
+
+- Bike imagery uses the owner's catalogue photos (one per wheel size) via `src/lib/photos.ts`; the size photo is also the AI mockup reference — no drawn SVG bikes.

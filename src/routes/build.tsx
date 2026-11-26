@@ -1,5 +1,4 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useRef } from "react";
 import { toast } from "sonner";
 import { Check, Copy, MessageCircle, ShoppingCart } from "lucide-react";
 import {
@@ -7,7 +6,8 @@ import {
   type BikeConfig, type StepId, activeSteps, clampConfig, clampStep, decodeConfig, drivetrainLabel, encodeConfig, formatZAR,
   hasPackage, isFlagship, isKids, priceLines, sanitizeDecal, specLines, totalCents, vatOf, type BarId, type ForkId, type FrameId,
 } from "@/lib/catalog";
-import { BikeSvg } from "@/components/vv/BikeSvg";
+import { BikePhoto } from "@/components/vv/BikePhoto";
+import { BAR_PHOTO, FORK_PHOTO, FRAME_PHOTO, SIZE_PHOTO } from "@/lib/photos";
 import { AiStudio } from "@/components/vv/AiStudio";
 import { cart, buildRef, orderSpec, whatsappUrl } from "@/lib/cart";
 import { seo } from "@/lib/seo";
@@ -44,7 +44,6 @@ function Build() {
   const step = clampStep(search.step ?? "size", cfg);
   const steps = activeSteps(cfg);
   const i = steps.indexOf(step);
-  const svgWrap = useRef<HTMLDivElement>(null);
 
   const go = (next: StepId, c: BikeConfig = cfg) => navigate({ search: { step: next, config: encodeConfig(clampConfig(c)) }, replace: false });
   const set = (patch: Partial<BikeConfig>) => navigate({ search: { step, config: encodeConfig(clampConfig({ ...cfg, ...patch })) }, replace: true });
@@ -65,8 +64,9 @@ function Build() {
 
       <div className="mt-4 grid gap-6 md:grid-cols-[1fr_1.1fr]">
         <div className="md:sticky md:top-20 md:self-start">
-          <div ref={svgWrap} className="rounded-lg border border-border bg-card p-4">
-            <BikeSvg config={cfg} className="w-full" title="Live preview of your build" />
+          <div className="rounded-lg border border-border bg-card p-4">
+            <BikePhoto config={cfg} eager title={`VaVa Voom ${SIZE_INFO[cfg.size].label} catalogue bike`} />
+            <p className="mt-2 text-xs text-muted-foreground">Catalogue photo for this wheel size. Your frame, parts and colours follow your choices.</p>
           </div>
         </div>
 
@@ -85,7 +85,7 @@ function Build() {
             <div className="mt-4 grid grid-cols-2 gap-3" role="radiogroup">
               {(Object.keys(FRAMES) as FrameId[]).filter((f) => f !== "yframe" || kids).map((f) => (
                 <Opt key={f} selected={cfg.frame === f} onClick={() => set({ frame: f })} title={FRAMES[f].name} desc={FRAMES[f].desc} price="R0 extra">
-                  <BikeSvg config={{ ...cfg, frame: f }} className="mb-2 w-full" title={FRAMES[f].name} />
+                  {FRAME_PHOTO[f] ? <img src={FRAME_PHOTO[f]} alt={FRAMES[f].name} loading="lazy" className="mb-2 aspect-[16/10] w-full rounded-md object-contain bg-foreground/90" /> : null}
                 </Opt>
               ))}
             </div>
@@ -94,7 +94,9 @@ function Build() {
           {step === "fork" && (
             <div className="mt-4 grid gap-3 sm:grid-cols-3" role="radiogroup">
               {(Object.keys(FORKS) as ForkId[]).map((f) => (
-                <Opt key={f} selected={cfg.fork === f} onClick={() => set({ fork: f })} title={FORKS[f].name} desc={FORKS[f].desc} price={f === "standard" ? "Included" : up(UPGRADE_CENTS[f])} />
+                <Opt key={f} selected={cfg.fork === f} onClick={() => set({ fork: f })} title={FORKS[f].name} desc={FORKS[f].desc} price={f === "standard" ? "Included" : up(UPGRADE_CENTS[f])}>
+                  {FORK_PHOTO[f] ? <img src={FORK_PHOTO[f]} alt={FORKS[f].name} loading="lazy" className="mb-2 h-28 w-full rounded-md object-contain bg-foreground/90" /> : null}
+                </Opt>
               ))}
             </div>
           )}
@@ -102,7 +104,9 @@ function Build() {
           {step === "bars" && (
             <div className="mt-4 grid gap-3 sm:grid-cols-3" role="radiogroup">
               {(Object.keys(BARS) as BarId[]).map((b) => (
-                <Opt key={b} selected={cfg.bars === b} onClick={() => set({ bars: b })} title={BARS[b].name} desc={BARS[b].desc} price="R0 extra" />
+                <Opt key={b} selected={cfg.bars === b} onClick={() => set({ bars: b })} title={BARS[b].name} desc={BARS[b].desc} price="R0 extra">
+                  <img src={BAR_PHOTO[b]} alt={BARS[b].name} loading="lazy" className="mb-2 h-16 w-full rounded-md object-contain bg-foreground/90" />
+                </Opt>
               ))}
             </div>
           )}
@@ -196,7 +200,7 @@ function Build() {
                   <Copy className="h-4 w-4" /> Copy share link
                 </button>
               </div>
-              <AiStudio config={cfg} getSvg={() => svgWrap.current?.querySelector("svg")?.outerHTML.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="240"') ?? null} />
+              <AiStudio config={cfg} referenceUrl={SIZE_PHOTO[cfg.size]} />
             </div>
           )}
         </div>

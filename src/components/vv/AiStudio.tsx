@@ -2,12 +2,12 @@ import { useState } from "react";
 import { Download, KeyRound, LogOut, Loader2, ShieldCheck } from "lucide-react";
 import logo from "@/assets/logo.png.asset.json";
 import { type BikeConfig, buildAiPrompt, configHash } from "@/lib/catalog";
-import { AiError, PROVIDERS, type Provider, accentMatches, composeMockup, generateWithProvider, mockupCache, svgToPng, tokenStore } from "@/lib/ai-mockup";
+import { AiError, PROVIDERS, type Provider, accentMatches, composeMockup, generateWithProvider, mockupCache, imageToPng, tokenStore } from "@/lib/ai-mockup";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type Status = { kind: "idle" } | { kind: "working"; msg: string } | { kind: "done"; url: string; note?: string } | { kind: "error"; msg: string; auth: boolean };
 
-export function AiStudio({ config, getSvg }: { config: BikeConfig; getSvg: () => string | null }) {
+export function AiStudio({ config, referenceUrl }: { config: BikeConfig; referenceUrl: string }) {
   const [provider, setProvider] = useState<Provider>("openai");
   const [, force] = useState(0);
   const connected = (p: Provider) => !!tokenStore.get(p);
@@ -16,9 +16,7 @@ export function AiStudio({ config, getSvg }: { config: BikeConfig; getSvg: () =>
   const [status, setStatus] = useState<Status>({ kind: "idle" });
 
   async function fallback(note: string) {
-    const svg = getSvg();
-    if (!svg) return;
-    const blob = await svgToPng(svg);
+    const blob = await imageToPng(referenceUrl);
     const url = await composeMockup(URL.createObjectURL(blob), logo.url, config.decal, config.decalScheme);
     setStatus({ kind: "done", url, note });
   }
@@ -35,11 +33,9 @@ export function AiStudio({ config, getSvg }: { config: BikeConfig; getSvg: () =>
       setStatus({ kind: "done", url: cached, note: "Loaded from your saved mockups." });
       return;
     }
-    const svg = getSvg();
-    if (!svg) return;
     try {
-      setStatus({ kind: "working", msg: "Rendering your reference…" });
-      const ref = await svgToPng(svg);
+      setStatus({ kind: "working", msg: "Loading your catalogue photo…" });
+      const ref = await imageToPng(referenceUrl);
       const prompt = buildAiPrompt(config);
       for (let attempt = 0; attempt < 2; attempt++) {
         setStatus({ kind: "working", msg: attempt ? "Colour was off — retrying once…" : `Generating with ${PROVIDERS[provider].name}…` });
@@ -51,7 +47,7 @@ export function AiStudio({ config, getSvg }: { config: BikeConfig; getSvg: () =>
           return;
         }
       }
-      await fallback("The AI couldn't match your exact accent colour, so here's your recoloured reference render instead.");
+      await fallback("The AI couldn't match your exact accent colour, so here's the catalogue photo for your size instead.");
     } catch (e) {
       const err = e instanceof AiError ? e : new AiError("provider", "Something went wrong.");
       setStatus({ kind: "error", msg: err.message, auth: err.kind === "auth" });

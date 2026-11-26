@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Mail, MessageCircle, Trash2 } from "lucide-react";
-import { BikeSvg } from "@/components/vv/BikeSvg";
+import { BikePhoto } from "@/components/vv/BikePhoto";
 import { cart, cartTotals, emailUrl, orderSpec, useCart, whatsappUrl } from "@/lib/cart";
 import { encodeConfig, formatZAR, priceLines, totalCents } from "@/lib/catalog";
 import { seo } from "@/lib/seo";
@@ -32,7 +32,7 @@ function CartPage() {
       <div className="mt-6 grid gap-4">
         {items.map((i) => (
           <article key={i.ref} className="grid gap-4 rounded-lg border border-border bg-card p-4 sm:grid-cols-[180px_1fr]" data-testid="cart-item">
-            <BikeSvg config={i.config} className="w-full" title={i.name} />
+            <BikePhoto config={i.config} className="w-full" title={i.name} />
             <div>
               <div className="flex items-start justify-between gap-2">
                 <div>
