@@ -2,9 +2,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Check, Copy, MessageCircle, ShoppingCart } from "lucide-react";
 import {
-  BARS, DECAL_CENTS, DECAL_MAX, DRIVE28_CENTS, FORKS, FRAMES, SIZES, SIZE_INFO, STEP_TITLES, TRAINING_WHEELS_CENTS, UPGRADE_CENTS,
-  type BikeConfig, type StepId, activeSteps, clampConfig, clampStep, decodeConfig, drivetrainLabel, encodeConfig, formatZAR,
-  hasPackage, isFlagship, isKids, priceLines, sanitizeDecal, specLines, totalCents, vatOf, type BarId, type ForkId, type FrameId,
+  BARS, DECAL_CENTS, DECAL_MAX, DRIVE28_CENTS, FORKS, FRAMES, GEARS, SIZES, SIZE_INFO, STEP_TITLES, UPGRADE_CENTS,
+  type BikeConfig, type StepId, activeSteps, clampConfig, clampStep, decodeConfig, discsIncluded, encodeConfig, formatZAR,
+  isFlagship, isKids, priceLines, sanitizeDecal, summaryRows, totalCents, vatOf, type BarId, type ForkId, type FrameId, type GearId,
 } from "@/lib/catalog";
 import { BikePhoto } from "@/components/vv/BikePhoto";
 import { BAR_PHOTO, FORK_PHOTO, FRAME_PHOTO, SIZE_PHOTO } from "@/lib/photos";
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/build")({
     ...(typeof s["step"] === "string" ? { step: s["step"] } : {}),
     ...(typeof s["config"] === "string" ? { config: s["config"] } : {}),
   }),
-  head: () => seo("Build Studio — Design Your Custom Bike | VaVa Voom", "Ten quick steps: wheel size, frame, fork, bars, brakes, paint and your own name decal. Live price incl. VAT."),
+  head: () => seo("Build Studio — Design Your Custom Bike | VaVa Voom", "Pick size, frame, fork, handlebar, gears, brakes, colour and your own name decal. Live price incl. VAT."),
   component: Build,
 });
 
@@ -68,6 +68,14 @@ function Build() {
             <BikePhoto config={cfg} eager title={`VaVa Voom ${SIZE_INFO[cfg.size].label} catalogue bike`} />
             <p className="mt-2 text-xs text-muted-foreground">Catalogue photo for this wheel size. Your frame, parts and colours follow your choices.</p>
           </div>
+          <div className="mt-3 rounded-lg border border-border bg-card p-4" data-testid="live-summary">
+            <p className="font-display-slant text-lg">Build summary</p>
+            <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
+              {summaryRows(cfg).map(([k, v]) => (
+                <div key={k} className="contents"><dt className="text-muted-foreground">{k}</dt><dd className="flex items-center gap-2 text-right justify-end">{k === "Accent colour" && <span className="inline-block h-3 w-3 rounded-full border border-border" style={{ backgroundColor: v }} />}{v}</dd></div>
+              ))}
+            </dl>
+          </div>
         </div>
 
         <div>
@@ -76,7 +84,7 @@ function Build() {
           {step === "size" && (
             <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3" role="radiogroup">
               {SIZES.map((s) => (
-                <Opt key={s} testId={`size-${s}`} selected={cfg.size === s} onClick={() => set({ size: s })} title={SIZE_INFO[s].label} desc={SIZE_INFO[s].drivetrain + (SIZE_INFO[s].kids ? " · training wheels available" : "")} price={formatZAR(SIZE_INFO[s].baseCents)} />
+                <Opt key={s} testId={`size-${s}`} selected={cfg.size === s} onClick={() => set({ size: s })} title={SIZE_INFO[s].label} desc={SIZE_INFO[s].highlights} price={formatZAR(SIZE_INFO[s].baseCents)} />
               ))}
             </div>
           )}
@@ -92,9 +100,9 @@ function Build() {
           )}
 
           {step === "fork" && (
-            <div className="mt-4 grid gap-3 sm:grid-cols-3" role="radiogroup">
+            <div className="mt-4 grid gap-3 sm:grid-cols-2" role="radiogroup">
               {(Object.keys(FORKS) as ForkId[]).map((f) => (
-                <Opt key={f} selected={cfg.fork === f} onClick={() => set({ fork: f })} title={FORKS[f].name} desc={FORKS[f].desc} price={f === "standard" ? "Included" : up(UPGRADE_CENTS[f])}>
+                <Opt key={f} selected={cfg.fork === f} onClick={() => set({ fork: f })} title={FORKS[f].name} desc={FORKS[f].desc} price={isFlagship(cfg.size) || f === "single" ? "Included" : up(UPGRADE_CENTS.double)}>
                   {FORK_PHOTO[f] ? <img src={FORK_PHOTO[f]} alt={FORKS[f].name} loading="lazy" className="mb-2 h-28 w-full rounded-md object-contain bg-foreground/90" /> : null}
                 </Opt>
               ))}
@@ -111,21 +119,33 @@ function Build() {
             </div>
           )}
 
-          {step === "wheels" && (
-            <div className="mt-4 grid gap-3">
-              <Opt selected={hasPackage(cfg)} onClick={() => set({ fork: "double", discs: true, tyres: true })} title="Full package" desc={`Double-crown fork + disc brakes + tyre upgrade. Saves ${formatZAR(kids ? 12500 : 25000)}.`} price={up(UPGRADE_CENTS.package)} />
-              <div className="grid grid-cols-2 gap-3">
-                <Opt selected={cfg.tyres} onClick={() => set({ tyres: !cfg.tyres })} title="Tyre upgrade" desc="Chunkier grip. Standard is medium-fat." price={up(UPGRADE_CENTS.tyres)} />
-                <Opt selected={cfg.discs} onClick={() => set({ discs: !cfg.discs })} title="Disc brakes" desc="Stronger stopping in any weather." price={up(UPGRADE_CENTS.discs)} />
+          {step === "drive" && (
+            <div className="mt-4 grid gap-4">
+              <div className="grid gap-3 sm:grid-cols-2" role="radiogroup">
+                {(Object.keys(GEARS) as GearId[]).map((g) => (
+                  <Opt key={g} testId={`gears-${g}`} selected={cfg.gears === g} onClick={() => set({ gears: g })} title={GEARS[g].name} desc={GEARS[g].desc} price="Included" />
+                ))}
               </div>
-              <p className="text-xs text-muted-foreground">Tap again to remove an upgrade. Fork choice: {FORKS[cfg.fork].name}.</p>
+              {cfg.size === "26" && cfg.gears === "derailleur" && (
+                <div className="grid gap-3 sm:grid-cols-2" role="radiogroup">
+                  <Opt selected={!cfg.drive28} onClick={() => set({ drive28: false })} title="21-speed (3x7)" desc="Included with every 26-inch build." price="Included" />
+                  <Opt testId="drive28" selected={cfg.drive28} onClick={() => set({ drive28: true })} title="28-speed (3x8)" desc="More range for long climbs. 26-inch only." price={`+${formatZAR(DRIVE28_CENTS)}`} />
+                </div>
+              )}
+              {cfg.size !== "26" && <p className="text-xs text-muted-foreground">Speeds for this size: {SIZE_INFO[cfg.size].drivetrain}.</p>}
             </div>
           )}
 
-          {step === "drive" && (
+          {step === "brakes" && (
             <div className="mt-4 grid gap-3 sm:grid-cols-2" role="radiogroup">
-              <Opt selected={!cfg.drive28} onClick={() => set({ drive28: false })} title="21-speed (3x7)" desc="Included with every 26-inch build." price="Included" />
-              <Opt testId="drive28" selected={cfg.drive28} onClick={() => set({ drive28: true })} title="28-speed" desc="More range for long climbs. 26-inch only." price={`+${formatZAR(DRIVE28_CENTS)}`} />
+              {discsIncluded(cfg.size) ? (
+                <Opt selected onClick={() => {}} title="Disc brakes" desc={`Standard on the ${SIZE_INFO[cfg.size].label}.`} price="Included" />
+              ) : (
+                <>
+                  <Opt selected={!cfg.discs} onClick={() => set({ discs: false })} title="Standard rim brakes" price="Included" />
+                  <Opt testId="discs" selected={cfg.discs} onClick={() => set({ discs: true })} title="Disc brakes" desc="Stronger stopping in any weather." price={up(UPGRADE_CENTS.discs)} />
+                </>
+              )}
             </div>
           )}
 
@@ -134,8 +154,8 @@ function Build() {
               <div>
                 <p className="text-sm text-muted-foreground">Base colour</p>
                 <div className="mt-2 grid grid-cols-2 gap-3">
-                  <Opt selected={cfg.base === "black"} onClick={() => set({ base: "black" })} title="Gloss Deep Black" />
-                  <Opt selected={cfg.base === "white"} onClick={() => set({ base: "white" })} title="Arctic White" />
+                  <Opt selected={cfg.base === "black"} onClick={() => set({ base: "black" })} title="Charcoal Black" />
+                  <Opt selected={cfg.base === "white"} onClick={() => set({ base: "white" })} title="White" />
                 </div>
               </div>
               <div>
@@ -148,18 +168,18 @@ function Build() {
                   ))}
                 </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Decal scheme</p>
-                <div className="mt-2 grid grid-cols-2 gap-3">
-                  <Opt selected={cfg.decalScheme === "wob"} onClick={() => set({ decalScheme: "wob" })} title="White-on-Black" />
-                  <Opt selected={cfg.decalScheme === "bow"} onClick={() => set({ decalScheme: "bow" })} title="Black-on-White" />
-                </div>
-              </div>
             </div>
           )}
 
           {step === "decal" && (
             <div className="mt-4 grid gap-3">
+              <div>
+                <p className="text-sm text-muted-foreground">Decal scheme</p>
+                <div className="mt-2 grid grid-cols-2 gap-3">
+                  <Opt selected={cfg.decalScheme === "wob"} onClick={() => set({ decalScheme: "wob" })} title="White on Black" />
+                  <Opt selected={cfg.decalScheme === "bow"} onClick={() => set({ decalScheme: "bow" })} title="Black on White" />
+                </div>
+              </div>
               <p className="text-muted-foreground">Add a name, word or nickname to the down tube for {formatZAR(DECAL_CENTS)}. Leave empty for no decal.</p>
               <input data-testid="decal-input" aria-label="Decal text" maxLength={DECAL_MAX} defaultValue={cfg.decal} onChange={(e) => set({ decal: sanitizeDecal(e.target.value) })} placeholder="e.g. THANDO" className="rounded-md border border-input bg-background px-3 py-3 text-lg uppercase" />
               <p className="text-xs text-muted-foreground">Up to {DECAL_MAX} letters, numbers, spaces and . ' ! -</p>
@@ -169,17 +189,10 @@ function Build() {
             </div>
           )}
 
-          {step === "extras" && (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2" role="radiogroup">
-              <Opt selected={!cfg.training} onClick={() => set({ training: false })} title="No training wheels" price="R0" />
-              <Opt selected={cfg.training} onClick={() => set({ training: true })} title="Training wheels" desc="Removable, for first rides." price={`+${formatZAR(TRAINING_WHEELS_CENTS)}`} />
-            </div>
-          )}
-
           {step === "summary" && (
             <div className="mt-4 grid gap-4">
               <div className="rounded-lg border border-border bg-card p-4">
-                <ul className="space-y-1 text-sm text-muted-foreground">{specLines(cfg).map((l) => <li key={l}>{l}</li>)}</ul>
+                <ul className="space-y-1 text-sm text-muted-foreground">{summaryRows(cfg).map(([k, v]) => <li key={k}>{k}: {v}</li>)}{kids && <li>Training wheels: Included</li>}</ul>
                 <div className="mt-4 border-t border-border pt-3">
                   {priceLines(cfg).map((l) => (
                     <div key={l.label} className="flex justify-between text-sm"><span>{l.label}</span><span className="num">{formatZAR(l.cents)}</span></div>
@@ -209,7 +222,7 @@ function Build() {
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs text-muted-foreground">{SIZE_INFO[cfg.size].label} · {FRAMES[cfg.frame].name} · {drivetrainLabel(cfg)}{isFlagship(cfg.size) ? " · all upgrades" : ""}</p>
+            <p className="truncate text-xs text-muted-foreground">{SIZE_INFO[cfg.size].label} · {FRAMES[cfg.frame].name} · {FORKS[cfg.fork].name}{isFlagship(cfg.size) ? " · all upgrades" : ""}</p>
             <p className="num text-xl font-bold text-primary" data-testid="live-price">{formatZAR(total)}</p>
           </div>
           <button disabled={i <= 0} onClick={() => go(steps[i - 1]!)} className="font-display-slant rounded-md border border-border px-4 py-2.5 disabled:opacity-40">Back</button>

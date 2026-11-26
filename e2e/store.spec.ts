@@ -15,14 +15,13 @@ test("configurator steps, 26in 28-speed, decal and cart/WhatsApp", async ({ page
   await page.goto("/build");
   await page.getByTestId("size-26").click();
   await expect(page.getByTestId("live-price")).toHaveText("R1,890.00");
-  for (const t of ["Frame style", "Front fork", "Handlebars", "Wheels & brakes", "Drivetrain"]) {
+  for (const t of ["Frame style", "Front fork", "Handlebars", "Gears & drive"]) {
     await page.getByTestId("next").click();
     await expect(page.getByTestId("step-title")).toHaveText(t);
   }
   await page.getByTestId("drive28").click();
   await expect(page.getByTestId("live-price")).toHaveText("R2,240.00");
-  await page.getByTestId("next").click();
-  await page.getByTestId("next").click();
+  for (let k = 0; k < 3; k++) await page.getByTestId("next").click();
   await page.getByTestId("decal-input").fill("Thando");
   await expect(page.getByTestId("live-price")).toHaveText("R2,290.00");
   await page.getByTestId("next").click();
@@ -37,7 +36,7 @@ test("configurator steps, 26in 28-speed, decal and cart/WhatsApp", async ({ page
 
 test("pasted illegal URL is clamped", async ({ page }) => {
   await page.goto("/build?step=fork&config=size:27.5~frame:yframe");
-  await expect(page.getByTestId("step-title")).toHaveText("Handlebars");
+  await expect(page.getByTestId("step-title")).toHaveText("Front fork");
   await expect(page.getByTestId("live-price")).toHaveText("R3,250.00");
 });
 

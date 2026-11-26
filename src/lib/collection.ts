@@ -6,8 +6,8 @@ export const COLLECTION: CollectionItem[] = [
   {
     slug: "dirt-jumper-26",
     name: '26" Dirt Jumper',
-    tagline: "Sloping frame, double-crown fork, discs and fat tyres. Send it.",
-    config: clampConfig({ ...DEFAULT_CONFIG, size: "26", frame: "dirtjump", fork: "double", discs: true, tyres: true, bars: "riser", accent: "#A3E635" }),
+    tagline: "Sloping frame, double-crown fork, and disc brakes. Send it.",
+    config: clampConfig({ ...DEFAULT_CONFIG, size: "26", frame: "dirtjump", fork: "double", discs: true, bars: "riser", accent: "#A3E635" }),
   },
   {
     slug: "trail-cruiser-28",
@@ -19,6 +19,6 @@ export const COLLECTION: CollectionItem[] = [
     slug: "mini-hardtail-16",
     name: "Matching Mini-Hardtail",
     tagline: 'A 16" hardtail for the little one, with training wheels.',
-    config: clampConfig({ ...DEFAULT_CONFIG, size: "16", frame: "hardtail", fork: "single", training: true, accent: "#A3E635" }),
+    config: clampConfig({ ...DEFAULT_CONFIG, size: "16", frame: "hardtail", fork: "single", accent: "#A3E635" }),
   },
 ];
