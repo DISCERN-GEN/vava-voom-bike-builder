@@ -1,59 +1,62 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { COLLECTION } from "@/lib/collection";
 import { BikePhoto } from "@/components/vv/BikePhoto";
-import { encodeConfig, formatZAR, specLines, totalCents } from "@/lib/catalog";
+import { Button } from "@/components/ui/button";
+import { DEFAULT_CONFIG, SIZE_INFO, clampConfig, encodeConfig, formatZAR, totalCents, type Size } from "@/lib/catalog";
 import { cart } from "@/lib/cart";
 import { seo } from "@/lib/seo";
 import { useState } from "react";
 
 export const Route = createFileRoute("/collection")({
-  head: () => seo("Shop the Collection — VaVa Voom Cycles", "Ready-spec custom bikes: 26\" Dirt Jumper, 28-Speed Trail Cruiser and the Matching Mini-Hardtail."),
+  head: () => seo("Shop the Collection — VaVa Voom Cycles", "Shop First riders (12–14 inch), Confident riders (16–24 inch), Young Adults (26 inch) and Flagship Pro riders (27.5 inch)."),
   component: Collection,
 });
 
-const FILTERS = [
-  { id: "all", label: "All" },
-  { id: "adult", label: "Adults" },
-  { id: "kids", label: "Kids" },
-] as const;
+export const RIDER_COLLECTIONS: { id: string; name: string; range: string; sizes: Size[] }[] = [
+  { id: "first", name: "First riders", range: '12" · 14"', sizes: ["12", "14"] },
+  { id: "confident", name: "Confident riders", range: '16" – 24"', sizes: ["16", "18", "20", "22", "24"] },
+  { id: "young-adults", name: "Young Adults", range: '26"', sizes: ["26"] },
+  { id: "flagship", name: "Flagship Pro riders", range: '27.5"', sizes: ["27.5"] },
+];
 
 function Collection() {
-  const [f, setF] = useState<(typeof FILTERS)[number]["id"]>("all");
-  const list = COLLECTION.filter((b) => f === "all" || (f === "kids") === ["12", "14", "16"].includes(b.config.size));
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
-      <h1 className="font-display-slant text-4xl md:text-5xl">The Collection</h1>
-      <p className="mt-2 text-muted-foreground">Add straight to cart, or open any build in the studio and make it yours.</p>
-      <div className="mt-6 flex gap-2" role="tablist">
-        {FILTERS.map((x) => (
-          <button key={x.id} role="tab" aria-selected={f === x.id} onClick={() => setF(x.id)} className={`rounded-full border px-4 py-1.5 text-sm ${f === x.id ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>
-            {x.label}
-          </button>
-        ))}
-      </div>
-      <div className="mt-6 grid gap-5 md:grid-cols-3">
-        {list.map((b) => (
-          <article key={b.slug} className="flex flex-col rounded-lg border border-border bg-card p-4" data-testid="product-card">
-            <BikePhoto config={b.config} className="w-full" title={b.name} />
-            <h2 className="font-display-slant mt-3 text-2xl">{b.name}</h2>
-            <p className="text-sm text-muted-foreground">{b.tagline}</p>
-            <ul className="mt-3 space-y-0.5 text-xs text-muted-foreground">
-              {specLines(b.config).slice(0, 7).map((l) => <li key={l}>{l}</li>)}
-            </ul>
-            <p className="num mt-4 text-2xl font-bold text-primary">{formatZAR(totalCents(b.config))}</p>
-            <p className="text-xs text-muted-foreground">incl. VAT</p>
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <button className="font-display-slant rounded-md bg-primary py-2.5 text-primary-foreground" onClick={() => { cart.add(b.name, b.config); toast.success(`${b.name} added to cart`); }}>
-                Add to cart
-              </button>
-              <Link to="/build" search={{ step: "frame", config: encodeConfig(b.config) }} className="font-display-slant rounded-md border border-border py-2.5 text-center">
-                Customise this build
-              </Link>
-            </div>
-          </article>
-        ))}
+      <h1 className="font-display-slant text-4xl md:text-5xl">Shop the Collection</h1>
+      <div className="mt-8 grid gap-6 md:grid-cols-2">
+        {RIDER_COLLECTIONS.map((collection) => <RiderCollection key={collection.id} collection={collection} />)}
       </div>
     </div>
+  );
+}
+
+function RiderCollection({ collection }: { collection: (typeof RIDER_COLLECTIONS)[number] }) {
+  const [size, setSize] = useState<Size>(collection.sizes[0] ?? DEFAULT_CONFIG.size);
+  const config = clampConfig({ ...DEFAULT_CONFIG, size });
+  const name = `${collection.name} — ${SIZE_INFO[size].label}`;
+  return (
+    <article className="flex min-w-0 flex-col rounded-lg border border-border bg-card p-4" data-testid="product-card" aria-label={collection.name}>
+      <BikePhoto config={config} title={`${collection.name} — ${SIZE_INFO[size].label} catalogue bike`} eager />
+      <div className="mt-4 flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="font-display-slant text-2xl">{collection.name}</h2>
+        <p className="num text-lg font-semibold text-primary">{collection.range}</p>
+      </div>
+      <div className="mt-4 flex min-h-9 flex-wrap gap-2" role="group" aria-label={`${collection.name} wheel size`}>
+        {collection.sizes.map((wheelSize) => (
+          <Button key={wheelSize} size="sm" variant={size === wheelSize ? "default" : "outline"} aria-pressed={size === wheelSize} onClick={() => setSize(wheelSize)}>
+            {wheelSize}"
+          </Button>
+        ))}
+      </div>
+      <p className="mt-3 min-h-10 text-sm text-muted-foreground">{SIZE_INFO[size].drivetrain} · {SIZE_INFO[size].highlights}</p>
+      <p className="num mt-4 text-2xl font-bold text-primary">{formatZAR(totalCents(config))}</p>
+      <p className="text-xs text-muted-foreground">incl. VAT</p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Button className="flex-1" onClick={() => { cart.add(name, config); toast.success(`${name} added to cart`); }}>Add to cart</Button>
+        <Button asChild variant="outline" className="flex-1">
+          <Link to="/build" search={{ step: "frame", config: encodeConfig(config) }}>Customise this build</Link>
+        </Button>
+      </div>
+    </article>
   );
 }

@@ -2,13 +2,16 @@ import { test, expect } from "@playwright/test";
 
 const LIME_PNG = "iVBORw0KGgoAAAANSUhEUgAAAGAAAABAAQMAAADf+uBNAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAADUExURaPmNSLTTqoAAAAHdElNRQfqCxoROQu3zYnbAAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDI2LTExLTI2VDE3OjU3OjExKzAwOjAwUm8lcAAAACV0RVh0ZGF0ZTptb2RpZnkAMjAyNi0xMS0yNlQxNzo1NzoxMSswMDowMCMyncwAAAAodEVYdGRhdGU6dGltZXN0YW1wADIwMjYtMTEtMjZUMTc6NTc6MTErMDA6MDB0J7wTAAAAEElEQVQoz2NgGAWjYBSQCwADQAABTT9aBwAAAABJRU5ErkJggg==";
 
-test("storefront browse, filter and add to cart", async ({ page }) => {
+test("storefront browse rider collections and add selected size to cart", async ({ page }) => {
   await page.goto("/collection");
-  await expect(page.getByTestId("product-card")).toHaveCount(3);
-  await page.getByRole("tab", { name: "Kids" }).click();
-  await expect(page.getByTestId("product-card")).toHaveCount(1);
-  await page.getByRole("button", { name: "Add to cart" }).click();
+  await expect(page.getByTestId("product-card")).toHaveCount(4);
+  const firstRiders = page.getByRole("article", { name: "First riders", exact: true });
+  await firstRiders.getByRole("button", { name: '14"', exact: true }).click();
+  await expect(firstRiders.getByRole("img")).toHaveAttribute("src", /bike-14in/);
+  await firstRiders.getByRole("button", { name: "Add to cart" }).click();
   await expect(page.getByTestId("cart-count")).toHaveText("1");
+  await page.getByTestId("cart-link").click();
+  await expect(page.getByTestId("cart-total")).toHaveText("R520.00");
 });
 
 test("configurator steps, 26in 28-speed, decal and cart/WhatsApp", async ({ page }) => {
