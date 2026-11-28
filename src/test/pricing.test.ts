@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_CONFIG as D, type BikeConfig, decodeConfig, encodeConfig, priceLines, totalCents, vatOf, stepApplies, summaryRows } from "@/lib/catalog";
+import { DEFAULT_CONFIG as D, type BikeConfig, decodeConfig, encodeConfig, priceLines, totalCents, vatOf, stepApplies, summaryRows, clampConfig, specLines, buildAiPrompt } from "@/lib/catalog";
 import { cartTotals, type CartItem } from "@/lib/cart";
 import { accentCoverage, classifyStatus } from "@/lib/ai-mockup";
 
@@ -11,7 +11,8 @@ describe("base prices", () => {
 });
 
 describe("forks", () => {
-  it("single-crown included", () => expect(totalCents(c({ size: "18", fork: "single" }))).toBe(92000));
+  it("single-crown +R350", () => expect(totalCents(c({ size: "18", fork: "single" }))).toBe(127000));
+  it("single-crown R175 on kids", () => expect(totalCents(c({ size: "14", fork: "single" }))).toBe(69500));
   it("dual-crown +R450", () => expect(totalCents(c({ size: "18", fork: "double" }))).toBe(92000 + 45000));
   it("dual-crown R225 on kids", () => expect(totalCents(c({ size: "14", fork: "double" }))).toBe(52000 + 22500));
   it("flagship dual-crown free", () => expect(totalCents(c({ size: "27.5", fork: "double" }))).toBe(325000));
@@ -21,7 +22,7 @@ describe("disc brakes", () => {
   it("+R300 on 18\"", () => expect(totalCents(c({ size: "18", discs: true }))).toBe(92000 + 30000));
   it("+R300 on 26\"", () => expect(totalCents(c({ size: "26", discs: true }))).toBe(189000 + 30000));
   it("R150 on kids", () => expect(totalCents(c({ size: "16", discs: true }))).toBe(72000 + 15000));
-  it.each(["20", "22", "24", "27.5"] as const)("included on %s\"", (size) => {
+  it.each(["27.5"] as const)("included on %s\"", (size) => {
     expect(totalCents(c({ size, discs: true }))).toBe(totalCents(c({ size })));
     expect(decodeConfig(`size:${size}~discs:0`).discs).toBe(true);
   });
@@ -40,7 +41,7 @@ describe("decal and summary", () => {
     expect(totalCents(c({ size: "27.5", decal: "BOSS" }))).toBe(325000 + 5000);
   });
   it("flagship lists upgrades as included", () => expect(priceLines(c({ size: "27.5" })).some((l) => l.label.includes("included"))).toBe(true));
-  it("summary lists every group", () => expect(summaryRows(D).map(([k]) => k)).toEqual(["Size", "Frame", "Fork", "Handlebar", "Gears", "Brakes", "Base colour", "Accent colour", "Decal", "Name"]));
+  it("summary lists every group", () => expect(summaryRows(D).map(([k]) => k)).toEqual(["Size", "Frame", "Fork", "Handlebar", "Gears", "Brakes", "Tyres", "Base colour", "Accent colour", "Decal", "Name"]));
 });
 
 describe("cart VAT", () => {
@@ -63,9 +64,9 @@ describe("URL clamping", () => {
     expect(decodeConfig(encodeConfig(x))).toEqual(x);
   });
   it("clamps illegal pasted combinations", () => {
-    const out = decodeConfig("size:18~frame:yframe~fork:standard~drive28:1~accent:red~decal:%3Cscript%3EHELLOWORLDLONGNAME");
+    const out = decodeConfig("size:18~frame:yframe~fork:invalid~drive28:1~accent:red~decal:%3Cscript%3EHELLOWORLDLONGNAME");
     expect(out.frame).toBe("hardtail");
-    expect(out.fork).toBe("single");
+    expect(out.fork).toBe("standard");
     expect(out.drive28).toBe(false);
     expect(out.accent).toBe("#A3E635");
     expect(out.decal).toBe("scriptHELLOW");
@@ -82,5 +83,37 @@ describe("AI helpers", () => {
   it("detects accent coverage", () => {
     const px = new Uint8ClampedArray([163, 230, 53, 255, 0, 0, 0, 255]);
     expect(accentCoverage(px, "#A3E635")).toBe(0.5);
+  });
+});
+
+
+describe("final parts upgrade rules", () => {
+  it.each([["20", 159000], ["22", 179000], ["24", 199000]] as const)("disc brakes are +R300 on %s inch", (size, cents) => {
+    expect(totalCents(c({ size, discs: true }))).toBe(cents);
+    expect(decodeConfig(`size:${size}~discs:0`).discs).toBe(false);
+  });
+  it.each([["18", 117000], ["20", 154000], ["22", 174000], ["24", 194000], ["26", 214000]] as const)("tyres cost R250 on %s inch", (size, cents) => expect(totalCents(c({ size, tyres: true }))).toBe(cents));
+  it.each([["12", 50500], ["14", 64500], ["16", 84500]] as const)("tyres cost R125 on %s inch", (size, cents) => expect(totalCents(c({ size, tyres: true }))).toBe(cents));
+  it.each([["18", 167000], ["20", 204000], ["22", 224000], ["24", 244000], ["26", 264000], ["12", 75500], ["14", 89500], ["16", 109500]] as const)("full package price on %s inch", (size, cents) => {
+    expect(totalCents(c({ size, fork: "double", discs: true, tyres: true }))).toBe(cents);
+  });
+  it("single-crown is not the package", () => expect(totalCents(c({ size: "20", fork: "single", discs: true, tyres: true }))).toBe(219000));
+  it("26-inch 28-speed remains R350 outside the package", () => expect(totalCents(c({ size: "26", fork: "double", discs: true, tyres: true, drive28: true }))).toBe(299000));
+  it("Flagship includes dual-crown, discs and tyres and skips their steps", () => {
+    expect(clampConfig(c({ size: "27.5", fork: "standard", discs: false, tyres: false }))).toMatchObject({ fork: "double", discs: true, tyres: true });
+    expect(stepApplies("fork", c({ size: "27.5" }))).toBe(false);
+    expect(stepApplies("brakes", c({ size: "27.5" }))).toBe(false);
+  });
+  it("old saved builds default missing tyres to false", () => {
+    expect(decodeConfig("size:20").tyres).toBe(false);
+    const old = { ...D };
+    Reflect.deleteProperty(old, "tyres");
+    expect(clampConfig(old).tyres).toBe(false);
+  });
+  it("package selections round-trip into the order and AI specification", () => {
+    const build = c({ size: "26", fork: "double", discs: true, tyres: true });
+    expect(decodeConfig(encodeConfig(build))).toEqual(build);
+    expect(specLines(build)).toContain("Tyres: Upgraded tyres");
+    expect(buildAiPrompt(build)).toContain("Upgraded all-terrain tyres");
   });
 });

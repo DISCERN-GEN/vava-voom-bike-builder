@@ -5,7 +5,7 @@ import logo from "@/assets/logo.png.asset.json";
 import { useCart } from "@/lib/cart";
 
 const NAV = [
-  { to: "/collection", label: "Shop" },
+  { to: "/catalogue", label: "Catalogue" },
   { to: "/build", label: "Build" },
   { to: "/story", label: "Story" },
   { to: "/contact", label: "Contact" },
@@ -62,7 +62,7 @@ export function SiteFooter() {
           <p className="mt-2">123 Victoria Street, Willowmore, 6445, Western Cape</p>
         </div>
         <div className="grid gap-1">
-          <Link to="/collection">Shop</Link>
+          <Link to="/catalogue">Catalogue</Link>
           <Link to="/build">Build Studio</Link>
           <Link to="/contact">Contact & FAQ</Link>
         </div>

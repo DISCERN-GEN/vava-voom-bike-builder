@@ -37,3 +37,7 @@ use the editor.
 - Unit tests in `src/test`, mobile Playwright E2E in `e2e/` (`bun run test:e2e`).
 
 - Bike imagery uses the owner's catalogue photos (one per wheel size) via `src/lib/photos.ts`; the size photo is also the AI mockup reference — no drawn SVG bikes.
+
+- `/catalogue` owns rider collections; `/collection` redirects to it so existing links remain usable.
+- Mockup downloads must pass through `src/lib/watermark.ts` and reject stamping failures; on-screen images remain unchanged.
+- Package pricing is derived from fork/discs/tyres in the shared catalog, never stored as a separate flag, so every cart/spec/link agrees.

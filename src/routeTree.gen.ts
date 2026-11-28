@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BuildRouteImport } from './routes/build'
 import { Route as CartRouteImport } from './routes/cart'
+import { Route as CatalogueRouteImport } from './routes/catalogue'
 import { Route as CollectionRouteImport } from './routes/collection'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -31,6 +32,11 @@ const BuildRoute = BuildRouteImport.update({
 const CartRoute = CartRouteImport.update({
   id: '/cart',
   path: '/cart',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CatalogueRoute = CatalogueRouteImport.update({
+  id: '/catalogue',
+  path: '/catalogue',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CollectionRoute = CollectionRouteImport.update({
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/build': typeof BuildRoute
   '/cart': typeof CartRoute
+  '/catalogue': typeof CatalogueRoute
   '/collection': typeof CollectionRoute
   '/contact': typeof ContactRoute
   '/privacy': typeof PrivacyRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/build': typeof BuildRoute
   '/cart': typeof CartRoute
+  '/catalogue': typeof CatalogueRoute
   '/collection': typeof CollectionRoute
   '/contact': typeof ContactRoute
   '/privacy': typeof PrivacyRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/build': typeof BuildRoute
   '/cart': typeof CartRoute
+  '/catalogue': typeof CatalogueRoute
   '/collection': typeof CollectionRoute
   '/contact': typeof ContactRoute
   '/privacy': typeof PrivacyRoute
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/build'
     | '/cart'
+    | '/catalogue'
     | '/collection'
     | '/contact'
     | '/privacy'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/build'
     | '/cart'
+    | '/catalogue'
     | '/collection'
     | '/contact'
     | '/privacy'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/'
     | '/build'
     | '/cart'
+    | '/catalogue'
     | '/collection'
     | '/contact'
     | '/privacy'
@@ -127,6 +139,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BuildRoute: typeof BuildRoute
   CartRoute: typeof CartRoute
+  CatalogueRoute: typeof CatalogueRoute
   CollectionRoute: typeof CollectionRoute
   ContactRoute: typeof ContactRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -155,6 +168,13 @@ declare module '@tanstack/react-router' {
       path: '/cart'
       fullPath: '/cart'
       preLoaderRoute: typeof CartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/catalogue': {
+      id: '/catalogue'
+      path: '/catalogue'
+      fullPath: '/catalogue'
+      preLoaderRoute: typeof CatalogueRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/collection': {
@@ -199,6 +219,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BuildRoute: BuildRoute,
   CartRoute: CartRoute,
+  CatalogueRoute: CatalogueRoute,
   CollectionRoute: CollectionRoute,
   ContactRoute: ContactRoute,
   PrivacyRoute: PrivacyRoute,

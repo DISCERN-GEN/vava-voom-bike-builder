@@ -20,7 +20,7 @@ function CartPage() {
         <p className="mt-2 text-muted-foreground">Start a build or grab one from the collection.</p>
         <div className="mt-6 flex justify-center gap-3">
           <Link to="/build" className="font-display-slant rounded-md bg-primary px-5 py-2.5 text-primary-foreground">Build your bike</Link>
-          <Link to="/collection" className="font-display-slant rounded-md border border-border px-5 py-2.5">Shop</Link>
+          <Link to="/catalogue" className="font-display-slant rounded-md border border-border px-5 py-2.5">Catalogue</Link>
         </div>
       </div>
     );

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { RIDER_COLLECTIONS } from "@/routes/collection";
+import { RIDER_COLLECTIONS } from "@/routes/catalogue";
 
 describe("Collection wheel-size groups", () => {
   it("offers 12 and 14 inch bikes for First riders", () => {

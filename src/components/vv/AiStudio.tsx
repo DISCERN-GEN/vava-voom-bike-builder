@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { watermarkedImageUrl } from "@/lib/watermark";
 import { Download, KeyRound, LogOut, Loader2, ShieldCheck } from "lucide-react";
 import logo from "@/assets/logo.png.asset.json";
 import { type BikeConfig, buildAiPrompt, configHash } from "@/lib/catalog";
@@ -104,9 +107,27 @@ export function AiStudio({ config, referenceUrl }: { config: BikeConfig; referen
         <figure className="mt-3">
           <img src={status.url} alt="AI-generated mockup of your build" className="w-full rounded-md border border-border" />
           <figcaption className="mt-2 text-xs text-muted-foreground">AI-generated illustration. Final build follows your saved spec.{status.note ? ` ${status.note}` : ""}</figcaption>
-          <a href={status.url} download={`vavavoom-${configHash(config)}.png`} className="mt-2 inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm">
+          <Button
+            variant="outline"
+            type="button"
+            data-testid="download-image"
+            onClick={async () => {
+              try {
+                const marked = await watermarkedImageUrl(status.url, logo.url);
+                const a = document.createElement("a");
+                a.href = marked;
+                a.download = `vavavoom-${configHash(config)}.png`;
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(marked), 10000);
+              } catch {
+                toast.error("Couldn't prepare the download. Please try generating the mockup again.");
+              }
+            }}
+            className="mt-2 inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm"
+          >
             <Download className="h-4 w-4" /> Download image
-          </a>
+          </Button>
+          <p className="mt-1 text-xs text-muted-foreground">Downloads carry a VaVa Voom watermark.</p>
         </figure>
       )}
 

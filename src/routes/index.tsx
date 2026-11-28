@@ -1,10 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Wrench, Palette, Users } from "lucide-react";
 import hero from "@/assets/hero.jpg.asset.json";
+import { Button } from "@/components/ui/button";
 import { seo } from "@/lib/seo";
 
 export const Route = createFileRoute("/")({
-  head: () => seo("VaVa Voom Cycles — Built Different. Ride Different.", "Custom bicycles from 12\" kids' bikes to the 27.5\" Flagship, built in Willowmore. Shop or design your own."),
+  head: () => ({
+    meta: [
+      ...seo("VaVa Voom Cycles — Built Different. Ride Different.", "Custom bicycles from 12-inch kids' bikes to the 27.5-inch Flagship, built in Willowmore. Browse the catalogue or design your own.").meta,
+      { property: "og:image", content: hero.url },
+      { name: "twitter:image", content: hero.url },
+    ],
+  }),
   component: Home,
 });
 
@@ -25,8 +32,8 @@ function Home() {
           <h1 className="font-display-slant text-glow mt-3 max-w-3xl text-5xl leading-none md:text-7xl">Built Different. Ride Different.</h1>
           <p className="mt-5 max-w-xl text-lg text-muted-foreground">Pick your frame, fork, bars and paint. We build it in Willowmore — for kids, grown-ups and everyone in between.</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/build" className="font-display-slant neon-glow rounded-md bg-primary px-6 py-3 text-lg text-primary-foreground">Build Your Bike</Link>
-            <Link to="/collection" className="font-display-slant rounded-md border border-border bg-card px-6 py-3 text-lg">Shop the collection</Link>
+            <Button asChild variant="outline" className="font-display-slant h-auto px-6 py-3 text-lg"><Link to="/catalogue">See our catalogue</Link></Button>
+            <Button asChild className="font-display-slant neon-glow h-auto px-6 py-3 text-lg"><Link to="/build">Build your bike</Link></Button>
           </div>
         </div>
       </section>

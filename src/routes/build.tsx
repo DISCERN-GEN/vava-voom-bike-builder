@@ -3,9 +3,10 @@ import { toast } from "sonner";
 import { Check, Copy, MessageCircle, ShoppingCart } from "lucide-react";
 import {
   BARS, DECAL_CENTS, DECAL_MAX, DRIVE28_CENTS, FORKS, FRAMES, GEARS, SIZES, SIZE_INFO, STEP_TITLES, UPGRADE_CENTS,
-  type BikeConfig, type StepId, activeSteps, clampConfig, clampStep, decodeConfig, discsIncluded, encodeConfig, formatZAR,
+  type BikeConfig, type StepId, activeSteps, clampConfig, clampStep, decodeConfig, PACKAGE_CENTS, encodeConfig, formatZAR,
   isFlagship, isKids, priceLines, sanitizeDecal, summaryRows, totalCents, vatOf, type BarId, type ForkId, type FrameId, type GearId,
 } from "@/lib/catalog";
+import { Button } from "@/components/ui/button";
 import { BikePhoto } from "@/components/vv/BikePhoto";
 import { BAR_PHOTO, FORK_PHOTO, FRAME_PHOTO, SIZE_PHOTO } from "@/lib/photos";
 import { AiStudio } from "@/components/vv/AiStudio";
@@ -27,13 +28,13 @@ const SWATCHES = ["#A3E635", "#22D3EE", "#F43F5E", "#FFB020", "#8B5CF6", "#F9731
 
 function Opt({ selected, onClick, title, desc, price, children, testId }: { selected: boolean; onClick: () => void; title: string; desc?: string; price?: string; children?: React.ReactNode; testId?: string }) {
   return (
-    <button type="button" role="radio" aria-checked={selected} onClick={onClick} data-testid={testId} className={`relative flex flex-col rounded-lg border bg-card p-3 text-left transition ${selected ? "border-primary neon-glow" : "border-border hover:border-muted-foreground"}`}>
+    <Button variant="outline" type="button" role="radio" aria-checked={selected} onClick={onClick} data-testid={testId} className={`relative flex flex-col rounded-lg border h-auto items-stretch whitespace-normal bg-card p-3 text-left transition ${selected ? "border-primary neon-glow" : "border-border hover:border-muted-foreground"}`}>
       {selected && <Check className="absolute right-2 top-2 h-4 w-4 text-primary" />}
       {children}
       <span className="font-display-slant text-lg leading-tight">{title}</span>
       {desc && <span className="mt-1 text-xs text-muted-foreground">{desc}</span>}
       {price && <span className="num mt-1 text-sm font-semibold text-primary">{price}</span>}
-    </button>
+    </Button>
   );
 }
 
@@ -101,8 +102,8 @@ function Build() {
 
           {step === "fork" && (
             <div className="mt-4 grid gap-3 sm:grid-cols-2" role="radiogroup">
-              {(Object.keys(FORKS) as ForkId[]).map((f) => (
-                <Opt key={f} selected={cfg.fork === f} onClick={() => set({ fork: f })} title={FORKS[f].name} desc={FORKS[f].desc} price={isFlagship(cfg.size) || f === "single" ? "Included" : up(UPGRADE_CENTS.double)}>
+              {(Object.keys(FORKS) as ForkId[]).filter((f) => !isFlagship(cfg.size) || f === "double").map((f) => (
+                <Opt key={f} selected={cfg.fork === f} onClick={() => set({ fork: f })} title={FORKS[f].name} desc={FORKS[f].desc} price={isFlagship(cfg.size) || f === "standard" ? "Included" : up(UPGRADE_CENTS[f])}>
                   {FORK_PHOTO[f] ? <img src={FORK_PHOTO[f]} alt={FORKS[f].name} loading="lazy" className="mb-2 h-28 w-full rounded-md object-contain bg-foreground/90" /> : null}
                 </Opt>
               ))}
@@ -138,12 +139,18 @@ function Build() {
 
           {step === "brakes" && (
             <div className="mt-4 grid gap-3 sm:grid-cols-2" role="radiogroup">
-              {discsIncluded(cfg.size) ? (
-                <Opt selected onClick={() => {}} title="Disc brakes" desc={`Standard on the ${SIZE_INFO[cfg.size].label}.`} price="Included" />
+              {isFlagship(cfg.size) ? (
+                <>
+                  <Opt selected onClick={() => {}} title="Disc brakes" desc={`Standard on the ${SIZE_INFO[cfg.size].label}.`} price="Included" />
+                  <Opt selected onClick={() => {}} title="Upgraded tyres" desc={`Standard on the ${SIZE_INFO[cfg.size].label}.`} price="Included" />
+                </>
               ) : (
                 <>
+                  <Opt testId="package" selected={cfg.fork === "double" && cfg.discs && cfg.tyres} onClick={() => set({ fork: "double", discs: true, tyres: true })} title="Full package" desc={`Dual-crown fork + disc brakes + upgraded tyres. Saves ${formatZAR(kids ? 12500 : 25000)}.`} price={up(PACKAGE_CENTS)} />
                   <Opt selected={!cfg.discs} onClick={() => set({ discs: false })} title="Standard rim brakes" price="Included" />
                   <Opt testId="discs" selected={cfg.discs} onClick={() => set({ discs: true })} title="Disc brakes" desc="Stronger stopping in any weather." price={up(UPGRADE_CENTS.discs)} />
+                  <Opt selected={!cfg.tyres} onClick={() => set({ tyres: false })} title="Medium-fat tyres" price="Included" />
+                  <Opt testId="tyres" selected={cfg.tyres} onClick={() => set({ tyres: true })} title="Tyre upgrade" desc="Tougher all-terrain tread." price={up(UPGRADE_CENTS.tyres)} />
                 </>
               )}
             </div>
@@ -225,9 +232,9 @@ function Build() {
             <p className="truncate text-xs text-muted-foreground">{SIZE_INFO[cfg.size].label} · {FRAMES[cfg.frame].name} · {FORKS[cfg.fork].name}{isFlagship(cfg.size) ? " · all upgrades" : ""}</p>
             <p className="num text-xl font-bold text-primary" data-testid="live-price">{formatZAR(total)}</p>
           </div>
-          <button disabled={i <= 0} onClick={() => go(steps[i - 1]!)} className="font-display-slant rounded-md border border-border px-4 py-2.5 disabled:opacity-40">Back</button>
+          <button disabled={i <= 0} onClick={() => { const previous = steps[i - 1]; if (previous) void go(previous); }} className="font-display-slant rounded-md border border-border px-4 py-2.5 disabled:opacity-40">Back</button>
           {i < steps.length - 1 && (
-            <button data-testid="next" onClick={() => go(steps[i + 1]!)} className="font-display-slant rounded-md bg-primary px-5 py-2.5 text-primary-foreground">Next</button>
+            <button data-testid="next" onClick={() => { const next = steps[i + 1]; if (next) void go(next); }} className="font-display-slant rounded-md bg-primary px-5 py-2.5 text-primary-foreground">Next</button>
           )}
         </div>
       </div>

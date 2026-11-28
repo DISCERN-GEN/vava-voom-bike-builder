@@ -15,10 +15,10 @@ export const SIZE_INFO: Record<Size, { baseCents: number; drivetrain: string; la
   "12": { baseCents: 38000, drivetrain: "Single-speed", label: '12"', kids: true, highlights: "Training wheels, sturdy build" },
   "14": { baseCents: 52000, drivetrain: "Single-speed", label: '14"', kids: true, highlights: "Training wheels, sturdy build" },
   "16": { baseCents: 72000, drivetrain: "Single-speed", label: '16"', kids: true, highlights: "Training wheels, sturdy build" },
-  "18": { baseCents: 92000, drivetrain: "21-speed (3x7)", label: '18"', kids: false, highlights: "21-speed 3x7, front suspension" },
-  "20": { baseCents: 129000, drivetrain: "21-speed (3x7)", label: '20"', kids: false, highlights: "21-speed 3x7, disc brakes" },
-  "22": { baseCents: 149000, drivetrain: "21-speed (3x7)", label: '22"', kids: false, highlights: "21-speed 3x7, disc brakes" },
-  "24": { baseCents: 169000, drivetrain: "21-speed (3x7)", label: '24"', kids: false, highlights: "21-speed 3x7, disc brakes" },
+  "18": { baseCents: 92000, drivetrain: "21-speed (3x7)", label: '18"', kids: false, highlights: "21-speed 3x7" },
+  "20": { baseCents: 129000, drivetrain: "21-speed (3x7)", label: '20"', kids: false, highlights: "21-speed 3x7" },
+  "22": { baseCents: 149000, drivetrain: "21-speed (3x7)", label: '22"', kids: false, highlights: "21-speed 3x7" },
+  "24": { baseCents: 169000, drivetrain: "21-speed (3x7)", label: '24"', kids: false, highlights: "21-speed 3x7" },
   "26": { baseCents: 189000, drivetrain: "21-speed (3x7)", label: '26"', kids: false, highlights: "21-speed 3x7 or 28-speed 3x8 (+R350)" },
   "27.5": { baseCents: 325000, drivetrain: "1x12-speed (10-51)", label: '27.5" Flagship', kids: false, highlights: "1x12-speed 10-51, all upgrades included" },
 };
@@ -33,8 +33,9 @@ export const FRAMES = {
 export type FrameId = keyof typeof FRAMES;
 
 export const FORKS = {
+  standard: { name: "Standard Rigid Fork", desc: "Sturdy, no-fuss front end." },
+  single: { name: "Single-Crown Gas Suspension Fork", desc: "Suspension that soaks up bumps." },
   double: { name: "Dual-Crown Gas Shock Fork", desc: "Moto-style, built for big hits." },
-  single: { name: "Single-Crown Gas Suspension Fork", desc: "Suspension that soaks up bumps. Included." },
 } as const;
 export type ForkId = keyof typeof FORKS;
 
@@ -51,11 +52,15 @@ export const GEARS = {
 } as const;
 export type GearId = keyof typeof GEARS;
 
-/** Upgrade prices in cents for 18"–26". Kids (12"–16") pay 50%. Single-crown fork is included in the base price. */
+/** Upgrade prices in cents for 18"–26". Kids (12"–16") pay 50%. Standard rigid fork is included in the base price. */
 export const UPGRADE_CENTS = {
+  single: 35000,
   double: 45000,
   discs: 30000,
+  tyres: 25000,
 } as const;
+/** Full package = dual-crown fork + disc brakes + tyre upgrade. Kids' sizes pay half (like every upgrade). */
+export const PACKAGE_CENTS = 75000;
 export const DRIVE28_CENTS = 35000; // 26" derailleur only
 export const DECAL_CENTS = 5000; // all bikes
 // TODO(owner): confirm internal hub gear price (currently R0).
@@ -71,10 +76,11 @@ export const HEX = /^#[0-9A-Fa-f]{6}$/;
 export const configSchema = z.object({
   size: z.enum(SIZES),
   frame: z.enum(["hardtail", "hybrid", "dirtjump", "curved", "yframe"]),
-  fork: z.enum(["double", "single"]),
+  fork: z.enum(["standard", "single", "double"]),
   bars: z.enum(["flat", "riser", "swept"]),
   gears: z.enum(["derailleur", "hub"]),
   discs: z.boolean(),
+  tyres: z.boolean(),
   drive28: z.boolean(),
   base: z.enum(["black", "white"]),
   accent: z.string().regex(HEX),
@@ -86,10 +92,11 @@ export type BikeConfig = z.infer<typeof configSchema>;
 export const DEFAULT_CONFIG: BikeConfig = {
   size: "26",
   frame: "hardtail",
-  fork: "single",
+  fork: "standard",
   bars: "flat",
   gears: "derailleur",
   discs: false,
+  tyres: false,
   drive28: false,
   base: "black",
   accent: "#A3E635",
@@ -99,8 +106,8 @@ export const DEFAULT_CONFIG: BikeConfig = {
 
 export const isKids = (s: Size) => SIZE_INFO[s].kids;
 export const isFlagship = (s: Size) => s === "27.5";
-/** Sizes where disc brakes come standard at no charge. */
-export const discsIncluded = (s: Size) => ["20", "22", "24", "27.5"].includes(s);
+/** Only the Flagship includes disc brakes; on every other size they are a paid upgrade. */
+export const discsIncluded = (s: Size) => isFlagship(s);
 export const baseColourName = (b: BikeConfig["base"]) => (b === "black" ? "Charcoal Black" : "White");
 
 export function sanitizeDecal(text: string): string {
@@ -115,9 +122,10 @@ export function sanitizeDecal(text: string): string {
 export function clampConfig(c: BikeConfig): BikeConfig {
   const out = { ...c };
   if (out.frame === "yframe" && !isKids(out.size)) out.frame = "hardtail";
+  out.tyres = out.tyres === true;
   if (isKids(out.size)) out.gears = "derailleur";
   if (out.size !== "26" || out.gears !== "derailleur") out.drive28 = false;
-  if (discsIncluded(out.size)) out.discs = true;
+  if (isFlagship(out.size)) { out.fork = "double"; out.discs = true; out.tyres = true; }
   if (!HEX.test(out.accent)) out.accent = DEFAULT_CONFIG.accent;
   out.accent = out.accent.toUpperCase();
   out.decal = sanitizeDecal(out.decal);
@@ -146,10 +154,14 @@ export function priceLines(input: BikeConfig): LineItem[] {
   const lines: LineItem[] = [{ label: `${info.label} base bike`, cents: info.baseCents }];
   const adj = (cents: number) => (isKids(c.size) ? half(cents) : cents);
   if (isFlagship(c.size)) {
-    lines.push({ label: `All upgrades included (${FORKS[c.fork].name}, disc brakes)`, cents: 0 });
+    lines.push({ label: `All upgrades included (${FORKS[c.fork].name}, disc brakes, upgraded tyres)`, cents: 0 });
+  } else if (c.fork === "double" && c.discs && c.tyres) {
+    lines.push({ label: "Full package (dual-crown fork, disc brakes, tyre upgrade)", cents: adj(PACKAGE_CENTS) });
   } else {
     if (c.fork === "double") lines.push({ label: FORKS.double.name, cents: adj(UPGRADE_CENTS.double) });
-    if (c.discs && !discsIncluded(c.size)) lines.push({ label: "Disc brakes", cents: adj(UPGRADE_CENTS.discs) });
+    if (c.fork === "single") lines.push({ label: FORKS.single.name, cents: adj(UPGRADE_CENTS.single) });
+    if (c.discs) lines.push({ label: "Disc brakes", cents: adj(UPGRADE_CENTS.discs) });
+    if (c.tyres) lines.push({ label: "Tyre upgrade", cents: adj(UPGRADE_CENTS.tyres) });
   }
   if (c.gears === "hub" && HUB_GEAR_CENTS) lines.push({ label: GEARS.hub.name, cents: HUB_GEAR_CENTS });
   if (c.drive28) lines.push({ label: "28-speed (3x8) drivetrain", cents: DRIVE28_CENTS });
@@ -184,6 +196,7 @@ export function summaryRows(c0: BikeConfig): [string, string][] {
     ["Handlebar", BARS[c.bars].name],
     ["Gears", drivetrainLabel(c)],
     ["Brakes", c.discs ? (discsIncluded(c.size) ? "Disc brakes (included)" : "Disc brakes") : "Standard rim brakes"],
+    ["Tyres", c.tyres ? "Upgraded tyres" : "Medium-fat tyres"],
     ["Base colour", baseColourName(c.base)],
     ["Accent colour", c.accent],
     ["Decal", c.decalScheme === "wob" ? "White on Black" : "Black on White"],
@@ -200,20 +213,21 @@ export const STEP_TITLES: Record<StepId, string> = {
   fork: "Front fork",
   bars: "Handlebars",
   drive: "Gears & drive",
-  brakes: "Disc brakes",
+  brakes: "Wheels & brakes",
   paint: "Colour",
   decal: "Decals",
   summary: "Summary",
 };
 
 export function stepApplies(step: StepId, c: BikeConfig) {
+  if (step === "fork" || step === "brakes") return !isFlagship(c.size);
   if (step === "drive") return !isKids(c.size);
   return true;
 }
 export const activeSteps = (c: BikeConfig) => STEPS.filter((s) => stepApplies(s, c));
 export function clampStep(step: string, c: BikeConfig): StepId {
   const idx = Math.max(0, STEPS.indexOf(step as StepId));
-  for (let i = idx; i < STEPS.length; i++) if (stepApplies(STEPS[i]!, c)) return STEPS[i]!;
+  for (const candidate of STEPS.slice(idx)) if (stepApplies(candidate, c)) return candidate;
   return "summary";
 }
 
@@ -266,7 +280,7 @@ export function buildAiPrompt(c0: BikeConfig): string {
   return [
     `Photorealistic studio product render of a ${SIZE_INFO[c.size].label} bicycle, side view, on a dark neon garage floor.`,
     `Frame: ${FRAMES[c.frame].name}. Fork: ${FORKS[c.fork].name}. Handlebars: ${BARS[c.bars].name}. Gears: ${drivetrainLabel(c)}.`,
-    `${c.discs ? "Disc brakes" : "Rim brakes"}.`,
+    `${c.discs ? "Disc brakes" : "Rim brakes"}. ${c.tyres ? "Upgraded all-terrain tyres" : "Medium-fat tyres"}.`,
     `Frame paint: ${c.base === "black" ? "charcoal black (#1F2124)" : "white (#F4F6F8)"} base with accent colour exactly ${c.accent} on the fork, rims and frame stripes.`,
     isKids(c.size) ? "Fitted with training wheels." : "",
     "The reference is a VaVa Voom catalogue photo: match its real-bike style and proportions, but show ONE bike only, centred, with your specified frame, fork, bars and paint. Do NOT draw any text, letters, logos, price tags, badges or banners anywhere in the image.",
